@@ -414,7 +414,6 @@ local SaveManager = {} do
             end
         })
 
-        configSection:AddLabel({ Title = "──────────────────" })
 
         self.ConfigListDropdown = configSection:AddDropdown({
             Title = "Config List",
@@ -456,7 +455,6 @@ local SaveManager = {} do
             end
         })
 
-        configSection:AddLabel({ Title = "──────────────────" })
 
         configSection:AddButton({
             Title = "Set as Autoload",
