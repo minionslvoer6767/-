@@ -1,0 +1,218 @@
+local cloneref = (cloneref or clonereference or function(instance: any) return instance end)
+local httpService = cloneref(game:GetService('HttpService'))
+local isfolder, isfile, listfiles = isfolder, isfile, listfiles
+
+if typeof(copyfunction) == "function" then
+    local isfolder_copy, isfile_copy, listfiles_copy = copyfunction(isfolder), copyfunction(isfile), copyfunction(listfiles)
+    local isfolder_success, isfolder_error = pcall(function()
+        return isfolder_copy("test" .. tostring(math.random(1000000, 9999999)))
+    end)
+    if isfolder_success == false or typeof(isfolder_error) ~= "boolean" then
+        isfolder = function(folder)
+            local success, data = pcall(isfolder_copy, folder)
+            return (if success then data else false)
+        end
+        isfile = function(file)
+            local success, data = pcall(isfile_copy, file)
+            return (if success then data else false)
+        end
+        listfiles = function(folder)
+            local success, data = pcall(listfiles_copy, folder)
+            return (if success then data else {})
+        end
+    end
+end
+
+local ThemeManager = {} do
+    ThemeManager.Folder = 'CallistoThemes'
+    ThemeManager.Library = nil
+    ThemeManager.DefaultTheme = 'Ark'
+    ThemeManager.BuiltInThemes = {
+        ['Ark'] = {
+            Background = Color3.fromHex("#000000"),
+            Foreground = Color3.fromHex("#0a0a0a"),
+            ForegroundLight = Color3.fromHex("#141014"),
+            Border = Color3.fromHex("#1a1a1a"),
+            Accent = Color3.fromHex("#C8A2C8"),
+            AccentLight = Color3.fromHex("#D8B4D8"),
+            AccentDark = Color3.fromHex("#A882A8"),
+            Text = Color3.fromHex("#ffffff"),
+        },
+        ['Default'] = {
+            Background = Color3.fromRGB(24, 26, 27),
+            Foreground = Color3.fromRGB(31, 34, 35),
+            ForegroundLight = Color3.fromRGB(38, 41, 42),
+            Border = Color3.fromRGB(45, 48, 49),
+            Accent = Color3.fromRGB(0, 120, 255),
+            AccentLight = Color3.fromRGB(77, 163, 255),
+            AccentDark = Color3.fromRGB(0, 86, 178),
+            Text = Color3.fromRGB(255, 255, 255),
+        },
+        ['DarkPurple'] = {
+            Background = Color3.fromRGB(20, 18, 25),
+            Foreground = Color3.fromRGB(28, 25, 33),
+            ForegroundLight = Color3.fromRGB(35, 32, 40),
+            Border = Color3.fromRGB(45, 40, 55),
+            Accent = Color3.fromRGB(155, 80, 255),
+            AccentLight = Color3.fromRGB(180, 120, 255),
+            AccentDark = Color3.fromRGB(100, 50, 180),
+            Text = Color3.fromRGB(255, 255, 255),
+        },
+        ['OceanBlue'] = {
+            Background = Color3.fromRGB(15, 25, 35),
+            Foreground = Color3.fromRGB(22, 35, 45),
+            ForegroundLight = Color3.fromRGB(30, 45, 55),
+            Border = Color3.fromRGB(40, 60, 75),
+            Accent = Color3.fromRGB(0, 200, 255),
+            AccentLight = Color3.fromRGB(80, 220, 255),
+            AccentDark = Color3.fromRGB(0, 130, 180),
+            Text = Color3.fromRGB(255, 255, 255),
+        },
+        ['Crimson'] = {
+            Background = Color3.fromRGB(30, 15, 20),
+            Foreground = Color3.fromRGB(40, 22, 28),
+            ForegroundLight = Color3.fromRGB(50, 30, 35),
+            Border = Color3.fromRGB(65, 40, 50),
+            Accent = Color3.fromRGB(255, 50, 80),
+            AccentLight = Color3.fromRGB(255, 100, 130),
+            AccentDark = Color3.fromRGB(180, 30, 55),
+            Text = Color3.fromRGB(255, 255, 255),
+        },
+        ['Forest'] = {
+            Background = Color3.fromRGB(18, 28, 20),
+            Foreground = Color3.fromRGB(25, 38, 28),
+            ForegroundLight = Color3.fromRGB(32, 48, 35),
+            Border = Color3.fromRGB(40, 60, 45),
+            Accent = Color3.fromRGB(80, 255, 120),
+            AccentLight = Color3.fromRGB(130, 255, 160),
+            AccentDark = Color3.fromRGB(50, 180, 80),
+            Text = Color3.fromRGB(255, 255, 255),
+        },
+        ['Light'] = {
+            Background = Color3.fromRGB(245, 245, 245),
+            Foreground = Color3.fromRGB(235, 235, 235),
+            ForegroundLight = Color3.fromRGB(240, 240, 240),
+            Border = Color3.fromRGB(200, 200, 200),
+            Accent = Color3.fromRGB(0, 120, 255),
+            AccentLight = Color3.fromRGB(77, 163, 255),
+            AccentDark = Color3.fromRGB(0, 86, 178),
+            Text = Color3.fromRGB(0, 0, 0),
+        },
+    }
+
+    function ThemeManager:SetLibrary(library)
+        self.Library = library
+        self:ForceTheme()
+    end
+
+    function ThemeManager:ForceTheme()
+        if not self.Library then return end
+        self:ApplyTheme(self.DefaultTheme)
+    end
+
+    function ThemeManager:GetPaths()
+        local paths = {}
+        local parts = self.Folder:split('/')
+        for idx = 1, #parts do
+            paths[#paths + 1] = table.concat(parts, '/', 1, idx)
+        end
+        paths[#paths + 1] = self.Folder .. '/themes'
+        return paths
+    end
+
+    function ThemeManager:BuildFolderTree()
+        local paths = self:GetPaths()
+        for i = 1, #paths do
+            local str = paths[i]
+            if isfolder(str) then continue end
+            makefolder(str)
+        end
+    end
+
+    function ThemeManager:CheckFolderTree()
+        if isfolder(self.Folder) then return end
+        self:BuildFolderTree()
+        task.wait(0.1)
+    end
+
+    function ThemeManager:SetFolder(folder)
+        self.Folder = folder
+        self:BuildFolderTree()
+    end
+
+    function ThemeManager:ApplyTheme(themeName)
+        local theme = self.BuiltInThemes[themeName]
+        if not theme then return end
+        self.Library:SetTheme(theme, true)
+        if self.Library.Flags then
+            self.Library.Flags.ThemeManager_ThemeList = themeName
+        end
+    end
+
+    function ThemeManager:SaveDefault(theme)
+        writefile(self.Folder .. '/themes/default.txt', theme)
+    end
+
+    function ThemeManager:LoadDefault()
+        local defaultPath = self.Folder .. '/themes/default.txt'
+        if isfile(defaultPath) then
+            local name = readfile(defaultPath)
+            if name and name ~= "" then
+                self:ApplyTheme(name)
+                if self.Library.Flags then
+                    self.Library.Flags.ThemeManager_ThemeList = name
+                end
+                return
+            end
+        end
+        self:ApplyTheme(self.DefaultTheme)
+        if self.Library.Flags then
+            self.Library.Flags.ThemeManager_ThemeList = self.DefaultTheme
+        end
+    end
+
+    function ThemeManager:BuildThemeManager(section)
+        assert(self.Library, 'Must set ThemeManager.Library first!')
+
+        local themeNames = {}
+        for name in pairs(self.BuiltInThemes) do
+            table.insert(themeNames, name)
+        end
+        table.sort(themeNames)
+
+        section:AddDropdown({
+            Title = "Theme List",
+            Values = themeNames,
+            Default = self.DefaultTheme,
+            Flag = "ThemeManager_ThemeList",
+            Callback = function(value)
+                self:ApplyTheme(value)
+            end
+        })
+
+        section:AddButton({
+            Title = "Set as Default Theme",
+            Callback = function()
+                local name = self.Library.Flags.ThemeManager_ThemeList
+                if name then
+                    self:SaveDefault(name)
+                end
+            end
+        })
+
+        section:AddButton({
+            Title = "Reset to Default Theme",
+            Callback = function()
+                pcall(delfile, self.Folder .. '/themes/default.txt')
+                self:ApplyTheme(self.DefaultTheme)
+            end
+        })
+
+        self:LoadDefault()
+    end
+
+    ThemeManager:BuildFolderTree()
+end
+
+getgenv().CallistoThemeManager = ThemeManager
+return ThemeManager
